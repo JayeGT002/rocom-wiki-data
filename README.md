@@ -45,6 +45,8 @@ python3 tools/query_pet.py 443 --all
 
 网页提供关键词搜索、赛季/来源/属性筛选、字段与比较方式可选的多条件 AND/OR 构造器、可选显示列、表头排序、分页、CSV 导出和可分享的查询链接。浏览器只读取静态 JSON，不需要后端服务或第三方运行时依赖。
 
+在线查询：[https://jayegt002.github.io/rocom-wiki-data/](https://jayegt002.github.io/rocom-wiki-data/)。GitHub Pages 已启用 GitHub Actions 发布；推送到 `main` 会自动生成数据并部署，手工触发可在 Actions 页面运行 `Build and deploy data browser`。
+
 本地预览：
 
 ```bash
@@ -52,7 +54,7 @@ python3 tools/build_site_data.py
 python3 -m http.server 8000 --directory site
 ```
 
-新增赛季 Lua 文件后，Pages 工作流会重新生成 JSON 并部署网站。启用时，在仓库 **Settings → Pages → Build and deployment** 中将发布来源选为 **GitHub Actions**；之后合入 `main` 会自动部署。手工触发可在 Actions 页面运行 `Build and deploy data browser`。
+新增赛季 Lua 文件后，Pages 工作流会重新生成 JSON 并部署网站。仓库发布来源配置为 **GitHub Actions**，无需选择 `docs/` 或根目录作为发布文件夹；工作流将 `site/` 打包为 Pages 构建产物。
 
 ## 数据来源
 
