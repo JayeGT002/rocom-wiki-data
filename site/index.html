@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="洛克王国世界 WIKI 图鉴与独立赛季数据查询表格">
+  <title>洛克王国世界 · 图鉴查询</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">ROCOM WIKI DATA</p>
+      <h1>精灵图鉴查询</h1>
+      <p class="intro">搜索 WIKI 图鉴与独立维护的赛季数据。筛选、排序并导出当前结果。</p>
+      <p class="source-note">数据为整理归档，以 <a href="https://wiki.biligame.com/nrc/精灵图鉴" target="_blank" rel="noreferrer">洛克王国世界 WIKI</a> 实时页面为准。</p>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="panel controls" aria-label="查询条件">
+      <label class="search-field">
+        <span>搜索</span>
+        <input id="search" type="search" autocomplete="off" placeholder="精灵名、图鉴编号、pet_id、属性…">
+      </label>
+      <label>
+        <span>赛季</span>
+        <select id="season-filter"><option value="">全部</option></select>
+      </label>
+      <label>
+        <span>数据来源</span>
+        <select id="source-filter"><option value="">全部</option></select>
+      </label>
+      <label>
+        <span>属性</span>
+        <select id="type-filter"><option value="">全部</option></select>
+      </label>
+      <button id="export" class="button secondary" type="button">导出 CSV</button>
+    </section>
+
+    <section class="panel query-builder" aria-label="组合筛选">
+      <div class="builder-head">
+        <div><h2>组合筛选</h2><p>按数据字段添加条件，可组合多个条件。</p></div>
+        <label class="logic-select"><span>条件关系</span>
+          <select id="logic"><option value="and">全部满足（AND）</option><option value="or">任一满足（OR）</option></select>
+        </label>
+      </div>
+      <div id="conditions" class="conditions"></div>
+      <div class="builder-actions">
+        <button id="add-condition" class="button secondary" type="button">＋ 添加条件</button>
+        <button id="clear-query" class="button secondary" type="button">清空条件</button>
+        <button id="copy-link" class="button primary" type="button">复制查询链接</button>
+        <span id="copy-status" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <details class="panel columns-panel">
+      <summary>选择显示列</summary>
+      <label class="column-search"><span>查找字段</span><input id="column-search" type="search" placeholder="按字段名筛选…"></label>
+      <div id="column-options" class="column-options"></div>
+    </details>
+
+    <section class="results panel" aria-label="精灵查询结果">
+      <div class="results-head">
+        <p id="status" role="status" aria-live="polite">正在载入数据…</p>
+        <label class="page-size">每页
+          <select id="page-size" aria-label="每页条数">
+            <option>25</option><option selected>50</option><option>100</option>
+          </select>
+          条
+        </label>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr id="column-head"></tr></thead>
+          <tbody id="rows"><tr><td colspan="16" class="empty">正在载入数据…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="results-foot">
+        <span id="range"></span>
+        <nav class="pagination" aria-label="结果分页">
+          <button id="prev" class="button secondary" type="button">上一页</button>
+          <span id="page-label"></span>
+          <button id="next" class="button secondary" type="button">下一页</button>
+        </nav>
+      </div>
+    </section>
+
+    <footer>仅作资料整理与查询 · <a href="https://github.com/JayeGT002/rocom-wiki-data">查看数据仓库与授权说明</a></footer>
+  </main>
+</body>
+</html>

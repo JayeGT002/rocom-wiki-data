@@ -1,11 +1,11 @@
 Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
 =======================================================================
 
-本仓库内容（包括但不限于 `洛克王国世界图鉴Lite.xlsx` 及其中的整理数据）以
+本仓库内容（包括但不限于 `data/spreadsheets/洛克王国世界图鉴Lite.xlsx` 及其中的整理数据）以
 **CC BY-NC-SA 4.0（署名-非商业性使用-相同方式共享）** 许可协议发布。
 
 数据资源来自 **洛克王国世界 WIKI**（https://wiki.biligame.com/nrc ，下称"WIKI"），
-上游内容亦遵循 CC BY-NC-SA 4.0；`wiki_modules/` 中的 Lua 数据为 WIKI 数据的镜像归档。
+上游内容亦遵循 CC BY-NC-SA 4.0；`data/wiki_modules/` 中的 Lua 数据为 WIKI 数据的镜像归档。
 
 署名（Attribution）
 -------------------
