@@ -1,61 +1,106 @@
 # 洛克王国世界图鉴数据仓库（Rocom Wiki Data）
 
-本项目聚合了《洛克王国世界》（Rocom）的图鉴 Excel 表格与从 **洛克王国世界 WIKI** 提取的原始数据模块，供需要图鉴/数值数据的开发者与玩家查阅、二次开发使用。
+本仓库归档《洛克王国世界》（Rocom）的 WIKI Lua 模块、独立赛季数据和整理后的图鉴表格，供玩家查阅及开发者二次使用。
 
-> 数据仅作整理与归档，**一切数值以 [洛克王国世界 WIKI](https://wiki.biligame.com/nrc) 实时页面为准**，本项目不保证与游戏内最新版本完全同步。
+> 数据仅作整理与归档，一切数值以[洛克王国世界 WIKI](https://wiki.biligame.com/nrc)实时页面为准。本项目不保证与游戏内最新版本完全同步。
 
-## 仓库内容
+## 目录结构
 
-| 文件 / 目录 | 说明 |
+```text
+.
+├── data/
+│   ├── wiki_modules/Pets/       # WIKI Module:Pets 的原始 Lua 数据镜像
+│   ├── seasons/S4Season.lua     # 按赛季独立维护的 Lua 数据，可继续添加 S5、S6…
+│   └── spreadsheets/            # 整理后的图鉴工作簿
+├── tools/
+│   ├── pet_data.py              # Lua 来源适配、解析和统一数据模型
+│   ├── query_pet.py             # 本地查询命令
+│   └── build_site_data.py       # 生成网页使用的 JSON 数据
+├── site/                        # GitHub Pages 静态查询表格
+├── .github/workflows/pages.yml  # 自动构建和部署
+├── LICENSE
+└── README.md
+```
+
+归档数据集中在 `data/`，按来源和用途分类；`tools/` 放数据读取与构建工具。各 Lua 文件保留原始 table 结构，不会被工具改写。
+
+## 查询方式
+
+### 命令行
+
+需要 Python 3，无第三方依赖。在仓库根目录执行：
+
+```bash
+python3 tools/query_pet.py 001
+python3 tools/query_pet.py 星星眼
+python3 tools/query_pet.py 463 --source seasons --season S4
+python3 tools/query_pet.py 443 --all
+```
+
+默认查询全部来源。`--source catalog` 只查 WIKI Catalog，`--source seasons` 查所有独立赛季文件；`--season S5` 可限制到单个赛季。查询适配器自动发现 `data/seasons/S数字Season.lua`，因此添加 `S5Season.lua`、`S6Season.lua` 后无需修改脚本中的赛季列表。多来源记录按 `pet_id` 路由到统一视图，赛季文件中的非空字段优先，原始 Lua 文件仍独立保存。
+
+数字参数按图鉴编号查询；名称支持部分匹配；`pet_` 参数按精灵 ID 查询。多个形态可用 `--all` 显示。
+
+### GitHub Pages 表格
+
+网页提供关键词搜索、赛季/来源/属性筛选、字段与比较方式可选的多条件 AND/OR 构造器、可选显示列、表头排序、分页、CSV 导出和可分享的查询链接。浏览器只读取静态 JSON，不需要后端服务或第三方运行时依赖。
+
+在线查询：[https://jayegt002.github.io/rocom-wiki-data/](https://jayegt002.github.io/rocom-wiki-data/)。GitHub Pages 已启用 GitHub Actions 发布；推送到 `main` 会自动生成数据并部署，手工触发可在 Actions 页面运行 `Build and deploy data browser`。
+
+本地预览：
+
+```bash
+python3 tools/build_site_data.py
+python3 -m http.server 8000 --directory site
+```
+
+新增赛季 Lua 文件后，Pages 工作流会重新生成 JSON 并部署网站。仓库发布来源配置为 **GitHub Actions**，无需选择 `docs/` 或根目录作为发布文件夹；工作流将 `site/` 打包为 Pages 构建产物。
+
+## 数据来源
+
+### WIKI Lua 模块
+
+`data/wiki_modules/Pets/` 镜像 WIKI 的 `Module:Pets/*` 数据。主要文件如下：
+
+| 文件 | 内容 |
 |---|---|
-| `洛克王国世界图鉴Lite.xlsx` | 整理好的图鉴电子表格（图鉴编号、家族、属性、蛋组、雌雄比例、身高体重、星光/洛克贝、精灵蛋范围、赛季与分类等） |
-| `wiki_modules/` | 从 WIKI 的 `Module:Pets/*` 抓取的全部数据模块（Lua 格式，仅供数据参考） |
-| `S4Season.lua` | S4 月涌狂想赛季新增精灵的独立数据文件（图鉴 443–465） |
+| `data/wiki_modules/Pets/data/Catalog.lua` | 精灵编号、名称、属性、种族值、蛋组、蛋重、性别比例、身高体重、星光值、洛克贝等图鉴资料 |
+| `data/wiki_modules/Pets/data/Config.lua` | 血统列表及构建形态等全局配置 |
+| `data/wiki_modules/Pets/data/Evolutions.lua` | 进化阶段与关系 |
+| `data/wiki_modules/Pets/data/Handbooks.lua` | 栖息地、图鉴标题、话题、进度与奖励 |
+| `data/wiki_modules/Pets/data/History.lua` | 技能及精灵数值调整历史 |
+| `data/wiki_modules/Pets/data/Index.lua` | 精灵 ID 到图片文件名的映射 |
+| `data/wiki_modules/Pets/data/Learnsets.lua` | 各血统和等级可习得的技能 |
+| `data/wiki_modules/Pets/data/Overview.lua` | 搜索词与赛季信息 |
+| `data/wiki_modules/Pets/data/SkillStoneTopics.lua` | 技能石话题、绑定精灵与图标 |
+| `data/wiki_modules/Pets/data/Skills.lua` | 技能与特性资料 |
+| `data/wiki_modules/Pets/data/Terms.lua` | 状态效果术语 |
+| `data/wiki_modules/Pets/data/TrainingReference.lua` | 养成参考资料与图标映射 |
+| `data/wiki_modules/Pets/data/Types.lua` | 系别克制关系与倍率 |
+| `data/wiki_modules/Pets/EvolutionConditions.lua` | 特殊进化条件 |
+| `data/wiki_modules/Pets/Theme.lua` | 系别主题色 |
 
-## S4 赛季独立数据文件
+### 独立赛季数据
 
-为确保抓取数据的原样性，S4 赛季新增精灵全部独立到新增文件 `S4Season.lua` 中，可按需替换/读取，后续新赛季均按此规律新增文件。
+`data/seasons/` 按赛季存放独立数据，目前 `S4Season.lua` 保存 S4 月涌狂想赛季资料，范围为图鉴 **443–465**，共 23 条记录。后续赛季各自新增 `S5Season.lua`、`S6Season.lua` 等文件，不必改写 WIKI 原始模块，也不需要改动查询器或网页代码。
 
-- 范围：图鉴 **443–465**（狼灵 443–445 与鹭、米龙、章脑、玳龟、量风碗、小浣蛋、幽铃、星星眼、布灵等 S4 新精灵家族，共 23 个编号），与 `洛克王国世界图鉴Lite.xlsx` 中「所属赛季 = S4月涌狂想」的行一一对应。
-- 结构：抽取自 `wiki_modules/Pets/data/Catalog.lua` 的原始 Lua 块，并按 Catalog 内既有写法补注 `starlight`（星光值）与 `review_gold`（洛克贝，= 星光值×50）字段。
-- 版权：数据来自洛克王国世界 WIKI + 手工补全，遵循 **CC BY-NC-SA 4.0**。
+S4 文件从 WIKI Catalog 原始记录整理，并按项目约定补充 `starlight`（星光值）和 `review_gold`（洛克贝，星光值×50）。WIKI 原始数据与手工维护字段的来源不同，更新时应分别核对、分别保留。
 
-## wiki_modules 目录各文件用途
+### 图鉴工作簿
 
-按 `Module:Pets/` 下的实际路径罗列（均为 Lua 数据文件，结构为 Lua table）：
+`data/spreadsheets/洛克王国世界图鉴Lite.xlsx` 汇总图鉴编号、家族、属性、蛋组、雌雄比例、身高体重、星光值、洛克贝、精灵蛋范围、赛季和分类等字段。
 
-| 文件路径 | 用途 |
-|---|---|
-| `Pets/data/Catalog.lua` | ★ 核心：精灵全量图鉴数据。含精灵编号/名称、系别、种族值六维（atk/def/hp/spa/spd/spe）、蛋组、**蛋重范围(egg_size)**、性别比例、身高/体重、星光值、洛克贝（基础 reward）、克制亲和(affinity)、捕捉阈值、是否可骑行、进化ID、图鉴ID 等 |
-| `Pets/data/Config.lua` | 全局配置：血统(bloodline)列表、构建形态等基础参数 |
-| `Pets/data/Evolutions.lua` | 进化链数据：各精灵的进化阶段、形态、进化到/进化自关系 |
-| `Pets/data/Handbooks.lua` | 图鉴条目数据：栖息地、图鉴标题、话题(topics)、进度、奖励等 |
-| `Pets/data/History.lua` | 数值改动历史：技能/精灵的 before/after 平衡性调整记录 |
-| `Pets/data/Index.lua` | 索引映射：精灵 ID → 头像/立绘图片文件名 |
-| `Pets/data/Learnsets.lua` | 学习技能表：各血统、各等级可习得的技能 |
-| `Pets/data/Overview.lua` | 快捷概览：精灵拼音搜索词、所属赛季(season) |
-| `Pets/data/SkillStoneTopics.lua` | 技能石话题：技能石绑定的图鉴话题、精灵、图标 |
-| `Pets/data/Skills.lua` | 技能库：技能名称、类别(特性/技能)、系别、耗能、描述 |
-| `Pets/data/Terms.lua` | 状态术语：中毒、灼烧等异常/状态效果说明 |
-| `Pets/data/TrainingReference.lua` | 养成参考：血统、标签、训练参考资料及图标路径映射 |
-| `Pets/data/Types.lua` | 系别克制表：单系与双系的克制/抵抗/弱点倍率(resist/weak) |
-| `Pets/EvolutionConditions.lua` | 精灵特殊进化条件（Wiki 侧可直接编辑的映射数据） |
-| `Pets/Theme.lua` | 系别主题色映射（PetDex 图鉴流配色编号） |
+## 版权与许可
 
-## 版权归属与开源协议
+- 数据资源来自[洛克王国世界 WIKI](https://wiki.biligame.com/nrc)，内容上传和维护者为 WIKI 贡献者。
+- WIKI 数据及其衍生内容遵循 **CC BY-NC-SA 4.0**：使用时注明来源、不得用于商业目的，演绎作品须使用相同协议。
+- Lua 模块是 WIKI 数据的镜像归档，版权归 WIKI 及原作者所有；本项目遵循上游共享条件。
+- 完整许可见 [LICENSE](./LICENSE) 和[协议法律文本](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.zh-Hans)。
 
-- **数据资源来自** [洛克王国世界WIKI](https://wiki.biligame.com/nrc)（内容上传/维护者为 WIKI 贡献者）。
-- 本项目遵循上游共享协议 **CC BY-NC-SA 4.0（署名-非商业性使用-相同方式共享）**。
-- 说明：
-  - **署名（BY）**：使用或转载时须注明来源「洛克王国世界 WIKI」，并提供指向本声明与上游页面的链接。
-  - **非商业性使用（NC）**：不得将本项目内容用于商业目的。
-  - **相同方式共享（SA）**：基于本项目内容的演绎作品，须以相同许可协议(CC BY-NC-SA 4.0)发布。
-- 完整许可条文见 [LICENSE](./LICENSE) 与本协议[官方法律文本](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.zh-Hans)。
-- 引用数据模块 `wiki_modules/` 为 WIKI Lua 数据的镜像归档，版权归 WIKI 及原作者所有，本项目仅作整理与索引。
+## 更新时间
 
-## 其他
-
-- 更新时间：基于北京时间 2026-09-10 14:43:58（UTC+8，对应 Wikidata WIKI 数据开始抓取时刻）抓取的 WIKI 数据。
+- WIKI 数据抓取开始时间：北京时间 2026-09-10 14:43:58（UTC+8）。
 - 最近一次数据更新：北京时间 2026-09-24 15:55:24（UTC+8），wiki 版本 s4-2026-09-24——通过定时任务自动探测并全量同步 WIKI 数据。
-- 更新规范：此后每次数据更新，均须在 README「其他 → 更新时间」记录**完整详细时间**（北京时间，精确到秒并标注 UTC+8），不得以月/年级别的模糊时间代替。
-- 如需同步最新数据，请访问 [洛克王国世界 WIKI - 精灵图鉴](https://wiki.biligame.com/nrc/精灵图鉴)。
+- 最近一次工作簿整理：北京时间 2026-09-10 16:45:45（UTC+8），调整表格列顺序并修正部分精灵资料。
+- 更新规范：此后每次数据更新，均须在 README「更新时间」记录**完整详细时间**（北京时间，精确到秒并标注 UTC+8），不得以月/年级别的模糊时间代替。
+- 最新资料请查阅 [洛克王国世界 WIKI 精灵图鉴](https://wiki.biligame.com/nrc/精灵图鉴)。
