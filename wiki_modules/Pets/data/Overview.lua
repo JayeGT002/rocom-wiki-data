@@ -619,4 +619,8 @@ return {["pet_000001"]={search="miaomiao mm",season="none"},
 ["pet_000622"]={search="guoshilifangren gslfr",season="none"},
 ["pet_000625"]={search="lieyankuangzhanshi lykzs",season="none"},
 ["pet_000626"]={search="manyuetuo（shangxiandeyangzi） myt（sxdyz）",season="S4"},
-["pet_000627"]={search="manyuetuo（xiaxiandeyangzi） myt（xxdyz）",season="S4"}}
+["pet_000627"]={search="manyuetuo（xiaxiandeyangzi） myt（xxdyz）",season="S4"},
+["pet_000628"]={search="huzhuquan（kanshoumaitiandeyangzi） hzq（ksmtdyz）",season="none"},
+["pet_000629"]={search="yinsuquan（kanshoumaitiandeyangzi） ysq（ksmtdyz）",season="none"},
+["pet_000630"]={search="gongpingge（chengliangdeyangzi） gpg（cldyz）",season="none"},
+["pet_000631"]={search="fengbaozhanquan（kanshoumaitiandeyangzi） fbzq（ksmtdyz）",season="none"}}
