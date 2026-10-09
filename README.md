@@ -93,10 +93,10 @@ S4 文件从 WIKI Catalog 原始记录整理，并按项目约定补充 `starlig
 ## 版权与许可
 
 - 数据资源来自[洛克王国世界 WIKI](https://wiki.biligame.com/nrc)，内容上传和维护者为 WIKI 贡献者。
-- WIKI 数据及其衍生内容遵循 **CC BY-NC-SA 4.0**：使用时注明来源、不得用于商业目的，演绎作品须使用相同协议。
-- Lua 模块是 WIKI 数据的镜像归档，版权归 WIKI 及原作者所有；本项目遵循上游共享条件。
-- 完整许可见 [LICENSE](./LICENSE) 和[协议法律文本](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.zh-Hans)。
-
+- 当前 WIKI 站点声明：除另有标注外，原创文字及有权授权的资料整理成果采用 **CC BY-SA 4.0**。本仓库将对应的 WIKI 数据镜像和整理成果按 CC BY-SA 4.0 发布。
+- 使用或分发时须注明 WIKI 来源、提供上游页面及许可链接、保留合理作者署名，并说明修改情况；演绎作品须采用 CC BY-SA 4.0 或兼容许可。该许可允许商业使用，但须继续遵守署名和相同方式共享条件。
+- 游戏图片、立绘、音视频、标识等游戏及第三方素材不在本仓库 CC BY-SA 许可范围内，版权仍归各自权利人。
+- 完整许可见 [LICENSE](./LICENSE) 和[CC BY-SA 4.0 法律文本](https://creativecommons.org/licenses/by-sa/4.0/legalcode.zh-Hans)。
 ## 更新时间
 
 - WIKI 数据抓取开始时间：北京时间 2026-09-10 14:43:58（UTC+8）。
