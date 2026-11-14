@@ -1,101 +1,131 @@
-# BWiki (wiki.biligame.com) 数据抓取流程指南
+# BWiki (wiki.biligame.com) 数据抓取指南
 
-> 面向 agent 的通用抓取参考。适用于 `wiki.biligame.com` 下任意子站（如 `/nrc/`）。
+> 面向 agent 的抓取参考，适用于 `wiki.biligame.com` 下任意子站（本仓库用 `/nrc/`）。
+> 最近实测：2026-11-14。
 
-## 1. WAF 拦截机制
+## 1. 端点与 WAF 行为
 
-| 端点 | 是否可用 | 说明 |
+| 端点 | 状态 | 说明 |
 |---|---|---|
-| `api.php`（MediaWiki 查询 API） | **不可用** | 腾讯 EdgeOne WAF 硬拦截，返回 HTTP 567 + 7351 字节拦截页；curl、Playwright 均被封，无 Set-Cookie、无 JS 挑战，疑似 TLS 指纹/IP 策略 |
-| `index.php?title=XXX&action=raw` | **可用** | 同源同 WAF，但 raw 内容端点未被拦截规则命中；仅需浏览器 UA |
-| `Special:PrefixIndex` / `Special:AllPages` | **不稳定** | 时而被 302 重定向，时而被 567 拦截，不可依赖 |
-| 普通 wiki 页面（`/nrc/首页`） | **不可用** | 同样被 567 拦截 |
+| `api.php`（MediaWiki Action API） | 间歇可用 | 2026-11-05 全量同步成功；2026-11-14 探测成功，随后批量请求触发 567 |
+| `index.php?title=XXX&action=raw` | 间歇可用 | 通常比 API 宽松，但 2026-11-14 同样被 567 拦截 |
+| 普通页面 / `Special:PrefixIndex` | 不稳定 | 不作为数据来源 |
 
-**拦截页特征**（用于自动判定是否被拦）：
-- HTTP 状态码 567
-- 响应体固定 ~7351–7352 字节
-- 开头为 `<!doctype html><html lang=zh-CN>` + EdgeOne 拦截文案
-- 响应头含 `Server: TencentEdgeOne`、`EO-LOG-UUID: ...`
+**结论：不要假设端点固定可用。** 567 更像 IP/频率策略，触发后需要冷却；单次探测和批量抓取的可用性可能不同。
 
-## 2. 可用抓取方式
+**拦截页特征**：
+- HTTP 567
+- 响应体约 7351–7352 字节
+- 开头 `<!doctype html><html lang=zh-CN>`
+- 响应头含 `Server: TencentEdgeOne`、`EO-LOG-UUID`
 
-```
-GET https://wiki.biligame.com/nrc/index.php?title={URL编码的Module标题}&action=raw
-```
+请求头只需常规浏览器 UA：
 
-**必需请求头**：
 ```
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
 Accept-Language: zh-CN,zh;q=0.9
 ```
 
-**不需要**：Cookie、Referer、sec-ch-ua、sec-fetch-* 等（加不加不影响结果）。
+不需要 Cookie / Referer。
 
-`curl-impersonate` 不必安装；普通 curl + 上述 UA 即可通过 `action=raw` 端点。
+## 2. 抓取方式
 
-## 3. 频率限制
+### 2.1 API 批量取内容
 
-| 模式 | 结果 | 建议 |
-|---|---|---|
-| 并发 15 请求 | ~50% 触发 567 拦截页 | **禁止并发** |
-| 顺序请求，间隔 1.5s | 全部成功 | **推荐** |
-| 顺序请求，间隔 <1s | 偶发拦截 | 不推荐 |
-| 被拦后立即重试 | 仍被拦 | 需等待 2s+ |
-
-**安全抓取参数**：
-- 并发度：1（纯顺序）
-- 请求间隔：≥1.5 秒
-- 单次超时：30–90s（大文件如 Catalog.lua ~930KB 需更长）
-- 失败重试：最多 3 次，间隔 2s
-
-## 4. 拦截判定与重试逻辑
-
-```python
-BLOCK_SIZE_RANGE = (7300, 7400)  # EdgeOne 拦截页固定大小
-
-def is_blocked(response_body: bytes) -> bool:
-    if len(response_body) in range(*BLOCK_SIZE_RANGE):
-        return b'TencentEdgeOne' in response_body or b'安全' in response_body
-    return False
-
-def fetch_raw(title: str, max_retries=3) -> str:
-    for attempt in range(max_retries):
-        resp = curl_get(title, delay=1.5 * (attempt + 1))
-        if not is_blocked(resp):
-            return resp
-        time.sleep(2)
-    raise Exception(f"被 EdgeOne 拦截，{max_retries} 次重试均失败")
+```text
+GET https://wiki.biligame.com/nrc/api.php
+  ?action=query
+  &prop=revisions
+  &rvprop=ids|timestamp|size|content
+  &rvslots=main
+  &titles=模块:Pets/data/Config|模块:Pets/data/Catalog
+  &format=json&formatversion=2
 ```
 
-## 5. 已知模块清单（Module:Pets/*）
+- 一次 5–10 个标题；大文件（`Catalog.lua` ~950KB）留 90s 超时。
+- 内容在 `query.pages[i].revisions[0].slots.main.content`。
+- 页面不存在返回 `missing: true`。
 
-共 15 个文件，分两类路径：
+### 2.2 raw 兜底
 
-```
-Module:Pets/data/Catalog.lua          # 核心：精灵全量数据
-Module:Pets/data/Config.lua           # 全局配置（含版本号）
-Module:Pets/data/Evolutions.lua       # 进化链
-Module:Pets/data/Handbooks.lua        # 图鉴条目
-Module:Pets/data/History.lua          # 数值改动历史
-Module:Pets/data/Index.lua            # 头像/立绘索引
-Module:Pets/data/Learnsets.lua        # 学习技能表
-Module:Pets/data/Overview.lua         # 拼音/赛季概览
-Module:Pets/data/SkillStoneTopics.lua # 技能石话题
-Module:Pets/data/Skills.lua           # 技能库
-Module:Pets/data/Terms.lua            # 状态术语
-Module:Pets/data/TrainingReference.lua # 养成参考
-Module:Pets/data/Types.lua            # 系别克制表
-Module:Pets/EvolutionConditions.lua   # 特殊进化条件
-Module:Pets/Theme.lua                 # 系别主题色
+```text
+GET https://wiki.biligame.com/nrc/index.php?title={URL编码标题}&action=raw
 ```
 
-本地对应路径：`wiki_modules/` 下保持相同相对结构。
+单个模块、体积小时优先用 raw；被 567 时按第 3 节退避。
 
-## 6. 新页面发现（受限）
+## 3. 频率与 567 处理
 
-`api.php` + `Special:PrefixIndex` 均被 WAF 拦截，**无法可靠枚举 wiki 上是否存在本地未归档的新模块文件**。
+- 纯顺序请求，间隔 1.5s 以上；**禁止并发**。
+- 被 567 后不要立刻重试：至少冷却 30s，再 2/4/8 分钟退避。
+- 连续 567 时，停止批量抓取，改用已有本地模块 + 版本探针判断是否值得重试。
+- 单次探测（1–2 个请求）通常比批量更容易通过；先用探针拿版本号，再决定是否全量。
 
-**替代策略**：
-- 维护已知模块清单（上文 15 个），定期逐个抓取对比
-- 若 wiki 新增独立模块文件，需人工查阅 wiki 页面确认
-- 实际经验：BWiki 新数据通常写入既有模块（Catalog/Skills/History），新增独立文件概率低
+## 4. 模块清单
+
+### 4.1 `Module:Pets/*`（18 个页面）
+
+```text
+模块:Pets
+模块:Pets/EvolutionConditions
+模块:Pets/SeasonConfig
+模块:Pets/SeasonData
+模块:Pets/Theme
+模块:Pets/data/Catalog          # 核心：编号 1–468，633 条
+模块:Pets/data/Config           # 版本 / 赛季 / pet_count
+模块:Pets/data/Evolutions
+模块:Pets/data/Handbooks
+模块:Pets/data/History
+模块:Pets/data/Index
+模块:Pets/data/Learnsets
+模块:Pets/data/Overview
+模块:Pets/data/SkillStoneTopics
+模块:Pets/data/Skills
+模块:Pets/data/Terms
+模块:Pets/data/TrainingReference
+模块:Pets/data/Types
+```
+
+### 4.2 S5 赛季压缩模块（6 个页面）
+
+```text
+模块:精灵图鉴/S5/配置            # namespace / modules / object_tag / array_tag
+模块:精灵图鉴/S5/数据/精灵       # Roster：245、254、469–493，共 29 条
+模块:精灵图鉴/S5/数据/辅助       # Overview/Evolutions/Handbooks/Index/Types 补丁
+模块:精灵图鉴/S5/数据/技能
+模块:精灵图鉴/S5/数据/特性
+模块:精灵图鉴/S5/数据/关联
+```
+
+S5 起 `Catalog` 不再收录新精灵。Roster 采用 `dragon-tuples-1`：
+
+```lua
+return { "dragon-tuples-1", { "字段名1", "字段名2", ... },
+  { 对象标记, { {字段下标, 值}, ... } } }
+```
+
+- 对象节点 `{1, {{idx, value}, ...}}`（`object_tag`，默认 1）
+- 数组节点 `{2, {v1, v2, ...}}`（`array_tag`，默认 2）
+- 下标对应第 2 项字段名表
+
+## 5. 本仓库同步工具
+
+```bash
+# 模块比对 / 更新（写入 data/wiki_modules/）
+python3 tools/sync_wiki.py
+python3 tools/sync_wiki.py --apply
+
+# S5 解码 + 赛季文件维护
+python3 tools/s5_sync.py --season
+python3 tools/s5_sync.py --s4
+```
+
+- `sync_wiki.py` 覆盖 24 个模块（18 个 Pets + 6 个 S5）。
+- `s5_sync.py` 从 `data/wiki_modules/精灵图鉴/S5/` 解码，写入 `data/seasons/S5Season.lua`，并保留手工 `starlight` / `review_gold`。
+
+## 6. 新模块发现
+
+`list=allpages&apnamespace=828` 在 API 可用时可枚举 Module 命名空间；API 被拦时无法可靠发现新页面。维护策略：
+
+- 版本探针：`Module:Pets/data/Config` + `模块:精灵图鉴/S5/配置`
+- 已知清单外的新模块，人工确认后再加入 `tools/sync_wiki.py` 的 `MODULE_TITLES`

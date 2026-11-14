@@ -1,94 +1,40 @@
-# 简化版本差异发现方法
+# 版本差异检测方法
 
-> 面向 agent 的快速版本检测方案。将"15 文件全量对比"降为"1 文件轻量探针"。
+> 轻量探针：先判断是否需要全量同步，再抓模块。
+> 最近核验：2026-11-14。
 
-## 核心发现
+## 1. 两条数据线
 
-`Module:Pets/data/Config.lua`（仅 ~4.6KB）内嵌 wiki 的完整版本元数据：
+| 数据线 | 探针 | 当前值（2026-11-14） |
+|---|---|---|
+| 旧版 Catalog | `data/wiki_modules/Pets/data/Config.lua` 的 `current_version` / `pet_count` | `s5-2026-10-31` / 633 |
+| S5 赛季 | `data/wiki_modules/精灵图鉴/S5/配置.lua` 的 `current.last_number` / `name` | 496 / 圣龙宝藏 |
 
-```lua
-current_version="s4-2026-09-17"   -- 当前生效版本
-versions={
-  {current=false,id="s1-2026-05-07",label="S1 赛季 5月7日数据"},
-  ...
-  {current=false,id="s4-2026-09-10",label="S4 月涌狂想 9月10日数据"},
-  {current=true, id="s4-2026-09-17",label="S4 月涌狂想 9月17日数据"}
-}
-pet_count=621
+- `Config.lua` 只覆盖编号 1–468 的旧线，**不含** S5 新精灵。
+- S5 实际内容看 `模块:精灵图鉴/S5/数据/精灵` 的 `revid`；494–496 目前是 `CatalogPlaceholders`（只有编号、无名称）。
+
+## 2. 检测流程
+
+```text
+Step 1  抓 2 个探针：Config.lua + S5/配置.lua（2 个请求）
+Step 2  比对 current_version / pet_count / last_number / name
+Step 3  有变化 → tools/sync_wiki.py --apply 全量比对
+Step 4  S5 数量或 revid 变化 → tools/s5_sync.py --season
+Step 5  用 tools/query_pet.py 与 tools/build_site_data.py 验证
 ```
 
-**只需抓取 Config.lua 一个文件，即可判定本地是否过期。**
+## 3. 示例
 
-## 检测流程
-
-```
-Step 1: 抓取远程 Config.lua（1 请求，~4.6KB）
-Step 2: 提取 current_version 字段
-Step 3: 与本地 Config.lua 的 current_version 比对
-  ├─ 一致 → 本地已是最新，无需进一步操作
-  └─ 不一致 → 触发全量抓取（15 个模块）
+```bash
+python3 tools/query_pet.py 481 --season S5
+python3 tools/build_site_data.py
+python3 tools/sync_wiki.py          # dry-run，先看差异
 ```
 
-## 实现示例
+`tools/sync_wiki.py` 的 dry-run 会输出 `SAME / DIFF / NEW / MISS`，并列出远端 revid 与时间戳；确认后再加 `--apply`。
 
-```python
-import re, subprocess, time
+## 4. 注意
 
-WIKI = "https://wiki.biligame.com/nrc/index.php"
-UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-LOCAL_CONFIG = "wiki_modules/Pets/data/Config.lua"
-
-def get_version(text: str) -> str:
-    m = re.search(r'current_version="([^"]+)"', text)
-    return m.group(1) if m else ""
-
-def fetch_config() -> str:
-    import urllib.parse
-    title = urllib.parse.quote("Module:Pets/data/Config")
-    r = subprocess.run(
-        ["curl", "-s", "--max-time", "30", "-A", UA,
-         f"{WIKI}?title={title}&action=raw"],
-        capture_output=True, text=True
-    )
-    # 拦截页判定
-    if len(r.stdout) in range(7300, 7400) and "TencentEdgeOne" in r.stdout:
-        raise Exception("被 EdgeOne 拦截")
-    return r.stdout
-
-def check_version() -> tuple[bool, str, str]:
-    remote = fetch_config()
-    local = open(LOCAL_CONFIG, encoding="utf-8").read()
-    r_ver = get_version(remote)
-    l_ver = get_version(local)
-    return (r_ver == l_ver, l_ver, r_ver)
-
-# 使用
-is_latest, local_ver, remote_ver = check_version()
-if is_latest:
-    print(f"本地已是最新版本: {local_ver}")
-else:
-    print(f"版本不同: 本地={local_ver} → 远程={remote_ver}，需全量抓取")
-```
-
-## 效率对比
-
-| 方法 | 请求数 | 传输量 | 耗时 | 适用场景 |
-|---|---|---|---|---|
-| 全量对比（15 文件） | 15 | ~5.2MB | ~25s（顺序+间隔） | 确认有差异后，需更新数据 |
-| **Config.lua 探针** | **1** | **~4.6KB** | **~1s** | 日常巡检/定期检测是否有更新 |
-| Config.lua + pet_count | 1 | ~4.6KB | ~1s | 同时检测精灵总数变化 |
-
-## 补充：pet_count 快速变化检测
-
-Config.lua 中的 `pet_count` 字段反映精灵总数。若仅需判断"是否有新增/删除精灵"：
-
-```python
-def get_pet_count(text: str) -> int:
-    m = re.search(r'pet_count=(\d+)', text)
-    return int(m.group(1)) if m else -1
-```
-
-`pet_count` 变化 → Catalog 等核心文件有增删，需全量更新。
-`pet_count` 不变但 `current_version` 变 → 仅有数值调整/数据富化，仍需全量更新。
-
-**结论：`current_version` 是最优先、最轻量的版本探针。**
+- API 可能返回 567，探针失败不代表数据没更新；冷却后重试，或参考 `docs/wiki-fetch-guide.md`。
+- 2026-11-05 与 2026-11-14 两次核验结果一致：版本 `s5-2026-10-31`、`pet_count=633`、S5 `last_number=496`，期间没有新增 S5 精灵。
+- 全量抓取代价约 4.5MB / 24 个模块；只在探针变化或需要复核时执行。

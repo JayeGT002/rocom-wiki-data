@@ -10,12 +10,14 @@
 .
 ├── data/
 │   ├── wiki_modules/Pets/       # WIKI Module:Pets 的原始 Lua 数据镜像
-│   ├── seasons/S4Season.lua     # 按赛季独立维护的 Lua 数据，可继续添加 S5、S6…
+│   ├── seasons/S4Season.lua     # 按赛季独立维护的 Lua 数据（S5Season.lua 同目录）
 │   └── spreadsheets/            # 整理后的图鉴工作簿
 ├── tools/
 │   ├── pet_data.py              # Lua 来源适配、解析和统一数据模型
 │   ├── query_pet.py             # 本地查询命令
-│   └── build_site_data.py       # 生成网页使用的 JSON 数据
+│   ├── build_site_data.py       # 生成网页使用的 JSON 数据
+│   ├── sync_wiki.py             # 从 bwiki 比对/拉取 Lua 模块
+│   └── s5_sync.py               # 解码 S5 压缩模块、维护赛季文件与 Excel
 ├── site/                        # GitHub Pages 静态查询表格
 ├── .github/workflows/pages.yml  # 自动构建和部署
 ├── LICENSE
@@ -35,6 +37,15 @@ python3 tools/query_pet.py 001
 python3 tools/query_pet.py 星星眼
 python3 tools/query_pet.py 463 --source seasons --season S4
 python3 tools/query_pet.py 443 --all
+```
+
+### 同步 bwiki
+
+```bash
+python3 tools/sync_wiki.py            # 只比对
+python3 tools/sync_wiki.py --apply    # 写入 data/wiki_modules
+python3 tools/s5_sync.py --season     # 解码 S5 并更新 data/seasons/S5Season.lua
+python3 tools/s5_sync.py --s4         # 按 Catalog 重建 data/seasons/S4Season.lua
 ```
 
 默认查询全部来源。`--source catalog` 只查 WIKI Catalog，`--source seasons` 查所有独立赛季文件；`--season S5` 可限制到单个赛季。查询适配器自动发现 `data/seasons/S数字Season.lua`，因此添加 `S5Season.lua`、`S6Season.lua` 后无需修改脚本中的赛季列表。多来源记录按 `pet_id` 路由到统一视图，赛季文件中的非空字段优先，原始 Lua 文件仍独立保存。
@@ -60,7 +71,7 @@ python3 -m http.server 8000 --directory site
 
 ### WIKI Lua 模块
 
-`data/wiki_modules/Pets/` 镜像 WIKI 的 `Module:Pets/*` 数据。主要文件如下：
+`data/wiki_modules/Pets/` 镜像 WIKI 的 `Module:Pets/*` 数据；`data/wiki_modules/精灵图鉴/S5/` 镜像 S5 赛季压缩模块。主要文件如下：
 
 | 文件 | 内容 |
 |---|---|
@@ -79,10 +90,17 @@ python3 -m http.server 8000 --directory site
 | `data/wiki_modules/Pets/data/Types.lua` | 系别克制关系与倍率 |
 | `data/wiki_modules/Pets/EvolutionConditions.lua` | 特殊进化条件 |
 | `data/wiki_modules/Pets/Theme.lua` | 系别主题色 |
+| `data/wiki_modules/Pets.lua` | `Module:Pets` 主模块（数据装配与渲染逻辑） |
+| `data/wiki_modules/Pets/SeasonConfig.lua` | 赛季视图配置：指向 `精灵图鉴/S5` |
+| `data/wiki_modules/Pets/SeasonData.lua` | 旧格式只读适配器：合并旧表与 S5 赛季数据 |
+| `data/wiki_modules/精灵图鉴/S5/配置.lua` | S5 赛季清单与 `dragon-tuples-1` 编码参数 |
+| `data/wiki_modules/精灵图鉴/S5/数据/精灵.lua` | S5 精灵 Roster（压缩，解码后 29 条） |
+| `data/wiki_modules/精灵图鉴/S5/数据/辅助.lua` | S5 的 Overview/Evolutions/Handbooks/Index/Types 补丁 |
+| `data/wiki_modules/精灵图鉴/S5/数据/{技能,特性,关联}.lua` | S5 技能、特性与页面路由（压缩） |
 
 ### 独立赛季数据
 
-`data/seasons/` 按赛季存放独立数据。`S4Season.lua` 保存 S4 月涌狂想赛季资料（图鉴 **443–465**，23 条）；`S5Season.lua` 保存 S5 圣龙宝藏赛季资料（245、254、469–493，共 **29 个形态**），由 WIKI `模块:精灵图鉴/S5/*` 解码后整理，并手工补全 `starlight`（星光值）与 `review_gold`（×50 口径；页面/基础洛克贝为 ×75）。后续赛季各自新增 `S6Season.lua` 等文件，不必改写 WIKI 原始模块，也不需要改动查询器或网页代码。
+`data/seasons/` 按赛季存放独立数据。`S4Season.lua` 保存 S4 月涌狂想赛季资料（图鉴 **443–468**，26 条）；`S5Season.lua` 保存 S5 圣龙宝藏赛季资料（245、254、469–493，共 **29 个形态**），由 WIKI `模块:精灵图鉴/S5/*` 解码后整理，并手工补全 `starlight`（星光值）与 `review_gold`（×50 口径；页面/基础洛克贝为 ×75）。S5 的 29/29 个形态均已填值，首领化形态统一按 80。后续赛季各自新增 `S6Season.lua` 等文件，不必改写 WIKI 原始模块，也不需要改动查询器或网页代码。
 
 S4 文件从 WIKI Catalog 原始记录整理，并按项目约定补充 `starlight`（星光值）和 `review_gold`（洛克贝，星光值×50）。WIKI 原始数据与手工维护字段的来源不同，更新时应分别核对、分别保留。
 
@@ -100,9 +118,9 @@ S4 文件从 WIKI Catalog 原始记录整理，并按项目约定补充 `starlig
 ## 更新时间
 
 - WIKI 数据抓取开始时间：北京时间 2026-09-10 14:43:58（UTC+8）。
-- 最近一次数据更新：北京时间 2026-09-24 15:55:24（UTC+8），wiki 版本 s4-2026-09-24——通过定时任务自动探测并全量同步 WIKI 数据。
+- 最近一次 WIKI 数据核验：北京时间 2026-11-14 20:23:43（UTC+8）——当前版本 `s5-2026-10-31`，`pet_count=633`，S5 `last_number=496`，与 2026-11-05 同步结果一致，无新增数据。
 - 最近一次工作簿整理：北京时间 2026-09-10 16:45:45（UTC+8），调整表格列顺序并修正部分精灵资料。
-- 最近一次赛季数据补充：北京时间 2026-11-14 20:20:24（UTC+8）——新增 `S5Season.lua`（S5 圣龙宝藏 29 个形态，星光值/回顾金币手工补全）。
+- 最近一次赛季数据补充：北京时间 2026-11-14 20:20:24（UTC+8）——`S4Season.lua` 扩至 443–468（26 条），`S5Season.lua` 归档 29 个形态并完成星光值/回顾金币补全。
 - 每周一自动检测wiki更新，由PicoClaw驱动。
 - 更新规范：此后每次数据更新，均须在 README「更新时间」记录**完整详细时间**（北京时间，精确到秒并标注 UTC+8），不得以月/年级别的模糊时间代替。
 - 最新资料请查阅 [洛克王国世界 WIKI 精灵图鉴](https://wiki.biligame.com/nrc/精灵图鉴)。
