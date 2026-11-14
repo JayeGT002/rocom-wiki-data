@@ -36,5 +36,5 @@ python3 tools/sync_wiki.py          # dry-run，先看差异
 ## 4. 注意
 
 - API 可能返回 567，探针失败不代表数据没更新；冷却后重试，或参考 `docs/wiki-fetch-guide.md`。
-- 2026-11-05 与 2026-11-14 两次核验结果一致：版本 `s5-2026-10-31`、`pet_count=633`、S5 `last_number=496`，期间没有新增 S5 精灵。
+- 2026-11-05 与 2026-11-14 两次核验：版本仍为 `s5-2026-10-31`、`pet_count=633`、S5 `last_number=496`，没有新增 S5 精灵；但 `Catalog` / `Evolutions`（2026-11-06，贝瑟家族 `evolution_id` 改名）与 `EvolutionConditions`（2026-11-08）有修订，已于 2026-11-14 同步。
 - 全量抓取代价约 4.5MB / 24 个模块；只在探针变化或需要复核时执行。
