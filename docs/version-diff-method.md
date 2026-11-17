@@ -1,13 +1,13 @@
 # 版本差异检测方法
 
 > 轻量探针：先判断是否需要全量同步，再抓模块。
-> 最近核验：2026-11-14。
+> 最近核验：2026-11-17。
 
 ## 1. 两条数据线
 
-| 数据线 | 探针 | 当前值（2026-11-14） |
+| 数据线 | 探针 | 当前值（2026-11-17） |
 |---|---|---|
-| 旧版 Catalog | `data/wiki_modules/Pets/data/Config.lua` 的 `current_version` / `pet_count` | `s5-2026-10-31` / 633 |
+| 旧版 Catalog | `data/wiki_modules/Pets/data/Config.lua` 的 `current_version` / `pet_count` | `s5-2026-11-12` / 633 |
 | S5 赛季 | `data/wiki_modules/精灵图鉴/S5/配置.lua` 的 `current.last_number` / `name` | 496 / 圣龙宝藏 |
 
 - `Config.lua` 只覆盖编号 1–468 的旧线，**不含** S5 新精灵。
@@ -36,5 +36,5 @@ python3 tools/sync_wiki.py          # dry-run，先看差异
 ## 4. 注意
 
 - API 可能返回 567，探针失败不代表数据没更新；冷却后重试，或参考 `docs/wiki-fetch-guide.md`。
-- 2026-11-05 与 2026-11-14 两次核验：版本仍为 `s5-2026-10-31`、`pet_count=633`、S5 `last_number=496`，没有新增 S5 精灵；但 `Catalog` / `Evolutions`（2026-11-06，贝瑟家族 `evolution_id` 改名）与 `EvolutionConditions`（2026-11-08）有修订，已于 2026-11-14 同步。
+- 2026-11-17 核验：版本升至 `s5-2026-11-12`，`pet_count=633`、S5 `last_number=496`，无新增精灵；2026-11-16 的修订集中在 `Catalog`（菊花梨冠军蛋、长江豚立绘、稻草人学习表）、`Learnsets`、`Evolutions`、`History` 与 S5 `数据/辅助`，已同步。
 - 全量抓取代价约 4.5MB / 24 个模块；只在探针变化或需要复核时执行。
