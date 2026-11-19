@@ -1,2 +1,2 @@
 -- 请勿直接修改本页面的数据。
-return {current={last_number=496,model_deferred={},name="圣龙宝藏",season="S5"},seasons={{array_tag=2,codec="dragon-tuples-1",modules={Arts="技能",Aux="辅助",Gifts="特性",Links="关联",Roster="精灵"},namespace="精灵图鉴/S5/数据",object_tag=1}}}
+return {current={last_number=496,model_deferred={pet_000711=true,pet_000712=true,pet_000713=true},name="圣龙宝藏",season="S5"},seasons={{array_tag=2,codec="dragon-tuples-1",modules={Arts="技能",Aux="辅助",Gifts="特性",Links="关联",Roster="精灵"},namespace="精灵图鉴/S5/数据",object_tag=1}}}

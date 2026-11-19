@@ -94,13 +94,13 @@ python3 -m http.server 8000 --directory site
 | `data/wiki_modules/Pets/SeasonConfig.lua` | 赛季视图配置：指向 `精灵图鉴/S5` |
 | `data/wiki_modules/Pets/SeasonData.lua` | 旧格式只读适配器：合并旧表与 S5 赛季数据 |
 | `data/wiki_modules/精灵图鉴/S5/配置.lua` | S5 赛季清单与 `dragon-tuples-1` 编码参数 |
-| `data/wiki_modules/精灵图鉴/S5/数据/精灵.lua` | S5 精灵 Roster（压缩，解码后 29 条） |
+| `data/wiki_modules/精灵图鉴/S5/数据/精灵.lua` | S5 精灵 Roster（压缩，解码后 32 条） |
 | `data/wiki_modules/精灵图鉴/S5/数据/辅助.lua` | S5 的 Overview/Evolutions/Handbooks/Index/Types 补丁 |
 | `data/wiki_modules/精灵图鉴/S5/数据/{技能,特性,关联}.lua` | S5 技能、特性与页面路由（压缩） |
 
 ### 独立赛季数据
 
-`data/seasons/` 按赛季存放独立数据。`S4Season.lua` 保存 S4 月涌狂想赛季资料（图鉴 **443–468**，26 条）；`S5Season.lua` 保存 S5 圣龙宝藏赛季资料（245、254、469–493，共 **29 个形态**），由 WIKI `模块:精灵图鉴/S5/*` 解码后整理，并手工补全 `starlight`（星光值）与 `review_gold`（×50 口径；页面/基础洛克贝为 ×75）。S5 的 29/29 个形态均已填值，首领化形态统一按 80。后续赛季各自新增 `S6Season.lua` 等文件，不必改写 WIKI 原始模块，也不需要改动查询器或网页代码。
+`data/seasons/` 按赛季存放独立数据。`S4Season.lua` 保存 S4 月涌狂想赛季资料（图鉴 **443–468**，26 条）；`S5Season.lua` 保存 S5 圣龙宝藏赛季资料（245、254、469–496，共 **32 个形态**），由 WIKI `模块:精灵图鉴/S5/*` 解码后整理，并手工补全 `starlight`（星光值）与 `review_gold`（×50 口径；页面/基础洛克贝为 ×75）。S5 的 32/32 个形态均已填值；494–496 为新增的呆呆铃三阶家族（活动限定），其一阶/二阶/三阶按 `32→56→80` 模板推断；首领化形态统一按 80。后续赛季各自新增 `S6Season.lua` 等文件，不必改写 WIKI 原始模块，也不需要改动查询器或网页代码。
 
 S4 文件从 WIKI Catalog 原始记录整理，并按项目约定补充 `starlight`（星光值）和 `review_gold`（洛克贝，星光值×50）。WIKI 原始数据与手工维护字段的来源不同，更新时应分别核对、分别保留。
 
@@ -118,9 +118,9 @@ S4 文件从 WIKI Catalog 原始记录整理，并按项目约定补充 `starlig
 ## 更新时间
 
 - WIKI 数据抓取开始时间：北京时间 2026-09-10 14:43:58（UTC+8）。
-- 最近一次 WIKI 数据核验：北京时间 2026-11-17 20:58:03（UTC+8）——版本升至 `s5-2026-11-12`，`pet_count=633`，S5 `last_number=496`，无新增精灵；`Catalog`、`Learnsets`、`Evolutions`、`History` 与 S5 `数据/辅助` 共 6 个模块更新（菊花梨冠军蛋、长江豚立绘、稻草人学习表等），已同步。
+- 最近一次 WIKI 数据核验：北京时间 2026-11-19 14:48:30（UTC+8）——版本升至 `s5-2026-11-19`，`pet_count=633`，S5 `last_number=496`；**新增 S5 精灵 494 呆呆铃、495 跳跳铃、496 铃兰夫人**，`S5Season.lua` 扩至 32 个形态。
 - 最近一次工作簿整理：北京时间 2026-09-10 16:45:45（UTC+8），调整表格列顺序并修正部分精灵资料。
-- 最近一次赛季数据补充：北京时间 2026-11-14 20:20:24（UTC+8）——`S4Season.lua` 扩至 443–468（26 条），`S5Season.lua` 归档 29 个形态并完成星光值/回顾金币补全。
+- 最近一次赛季数据补充：北京时间 2026-11-19 14:49:24（UTC+8）——`S5Season.lua` 扩至 32 个形态（新增 494 呆呆铃、495 跳跳铃、496 铃兰夫人），Excel 追加 3 行。
 - 每周一自动检测wiki更新，由PicoClaw驱动。
 - 更新规范：此后每次数据更新，均须在 README「更新时间」记录**完整详细时间**（北京时间，精确到秒并标注 UTC+8），不得以月/年级别的模糊时间代替。
 - 最新资料请查阅 [洛克王国世界 WIKI 精灵图鉴](https://wiki.biligame.com/nrc/精灵图鉴)。

@@ -90,7 +90,7 @@ GET https://wiki.biligame.com/nrc/index.php?title={URL编码标题}&action=raw
 
 ```text
 模块:精灵图鉴/S5/配置            # namespace / modules / object_tag / array_tag
-模块:精灵图鉴/S5/数据/精灵       # Roster：245、254、469–493，共 29 条
+模块:精灵图鉴/S5/数据/精灵       # Roster：245、254、469–496，共 32 条
 模块:精灵图鉴/S5/数据/辅助       # Overview/Evolutions/Handbooks/Index/Types 补丁
 模块:精灵图鉴/S5/数据/技能
 模块:精灵图鉴/S5/数据/特性
