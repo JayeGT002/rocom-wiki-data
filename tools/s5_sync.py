@@ -248,7 +248,7 @@ def write_season(roster):
         "-- S5 圣龙宝藏 赛季新增/改版精灵数据（对应图鉴 Excel 的 S5 行）",
         "-- 来源: 洛克王国世界WIKI 模块:精灵图鉴/S5/数据/精灵 + /数据/辅助（dragon-tuples-1 解码）",
         "-- 范围: 图鉴 245/254（首领化新形态）与 469-496，共 32 个形态",
-        "-- 维护: starlight / review_gold / gender_ratio 为手工字段；重新同步时保留",
+        "-- 维护: starlight / review_gold / gender_ratio 为手工字段；重新同步时保留，缺失表示待实测",
         "-- 口径: review_gold = 星光值 ×50（数据仓口径）；站点展示/实测金币按 ×75 换算",
         "-- 约定: 首领化形态（245、254、超能阿布）统一按星光值 80 计",
         "-- 版权: 数据来自洛克王国世界WIKI，遵循 CC BY-NC-SA 4.0",
@@ -378,8 +378,10 @@ def append_xlsx(rows, dry_run=False):
         if r is None:
             continue
         if ws.cell(r, 5).value != row[4] or ws.cell(r, 6).value != row[5]:
-            ws.cell(r, 5, row[4]).alignment = center
-            ws.cell(r, 6, row[5]).alignment = center
+            ws.cell(r, 5).value = row[4]
+            ws.cell(r, 6).value = row[5]
+            ws.cell(r, 5).alignment = center
+            ws.cell(r, 6).alignment = center
             updated += 1
     print(f"更新已有行: {updated}")
 
